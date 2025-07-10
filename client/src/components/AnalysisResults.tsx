@@ -69,6 +69,12 @@ export const AnalysisResults = ({ analysis }: AnalysisResultsProps) => {
     setIsSubscribed(true);
     localStorage.setItem('substack_subscription', 'subscribed');
   };
+
+  // Reset subscription status when a new analysis is provided
+  useEffect(() => {
+    setIsSubscribed(false);
+    localStorage.removeItem('substack_subscription');
+  }, [analysis.companyInfo.name]); // Reset when company changes
   
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-400';
@@ -123,7 +129,7 @@ export const AnalysisResults = ({ analysis }: AnalysisResultsProps) => {
     };
 
     checkSubstackSubscription();
-  }, []);
+  }, [analysis]); // Reset when new analysis is provided
 
   return (
     <div className="space-y-6">
@@ -300,72 +306,72 @@ export const AnalysisResults = ({ analysis }: AnalysisResultsProps) => {
 
       {/* Newsletter Gate */}
       {!isSubscribed ? (
-        <Card className="bg-gradient-primary border-primary shadow-elegant overflow-hidden">
+        <Card className="bg-primary border-primary shadow-lg overflow-hidden">
           <CardHeader className="text-center pb-4">
-            <div className="mx-auto mb-4 p-4 bg-primary-foreground/10 rounded-full w-fit">
-              <Star className="h-8 w-8 text-primary-foreground" />
+            <div className="mx-auto mb-4 p-4 bg-white/10 rounded-full w-fit">
+              <Star className="h-8 w-8 text-white" />
             </div>
-            <CardTitle className="text-2xl font-bold text-primary-foreground mb-2">
+            <CardTitle className="text-2xl font-bold text-white mb-2">
               🚀 Unlock Your Complete Analysis
             </CardTitle>
-            <div className="inline-flex items-center gap-2 bg-primary-foreground/20 px-4 py-2 rounded-full">
-              <Zap className="h-4 w-4 text-primary-foreground" />
-              <span className="text-primary-foreground font-semibold">100% FREE • No Credit Card Required</span>
+            <div className="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full">
+              <Zap className="h-4 w-4 text-white" />
+              <span className="text-white font-semibold">100% FREE • No Credit Card Required</span>
             </div>
           </CardHeader>
           <CardContent className="space-y-8">
             <div className="text-center">
-              <p className="text-primary-foreground/90 text-lg mb-6">
-                Get the complete investor-grade analysis worth <span className="font-bold text-primary-foreground">$500+</span> absolutely free. 
+              <p className="text-white/90 text-lg mb-6">
+                Get the complete investor-grade analysis worth <span className="font-bold text-white">$500+</span> absolutely free. 
                 Join thousands of founders who use our insights to close deals faster.
               </p>
               
               {/* Premium Benefits Grid */}
               <div className="grid md:grid-cols-2 gap-4 mb-8">
-                <div className="bg-primary-foreground/10 rounded-xl p-6 text-left">
+                <div className="bg-white/10 rounded-xl p-6 text-left">
                   <div className="flex items-start gap-3">
-                    <div className="p-2 bg-primary-foreground/20 rounded-lg">
-                      <MessageSquare className="h-5 w-5 text-primary-foreground" />
+                    <div className="p-2 bg-white/20 rounded-lg">
+                      <MessageSquare className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-primary-foreground mb-2">Investor Q&A Preparation</h4>
-                      <p className="text-primary-foreground/80 text-sm">Get specific questions VCs will ask + winning answers that close deals</p>
+                      <h4 className="font-semibold text-white mb-2">Investor Q&A Preparation</h4>
+                      <p className="text-white/80 text-sm">Get specific questions VCs will ask + winning answers that close deals</p>
                     </div>
                   </div>
                 </div>
                 
-                <div className="bg-primary-foreground/10 rounded-xl p-6 text-left">
+                <div className="bg-white/10 rounded-xl p-6 text-left">
                   <div className="flex items-start gap-3">
-                    <div className="p-2 bg-primary-foreground/20 rounded-lg">
-                      <Presentation className="h-5 w-5 text-primary-foreground" />
+                    <div className="p-2 bg-white/20 rounded-lg">
+                      <Presentation className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-primary-foreground mb-2">Slide-by-Slide Breakdown</h4>
-                      <p className="text-primary-foreground/80 text-sm">Detailed feedback on every slide with specific improvement actions</p>
+                      <h4 className="font-semibold text-white mb-2">Slide-by-Slide Breakdown</h4>
+                      <p className="text-white/80 text-sm">Detailed feedback on every slide with specific improvement actions</p>
                     </div>
                   </div>
                 </div>
                 
-                <div className="bg-primary-foreground/10 rounded-xl p-6 text-left">
+                <div className="bg-white/10 rounded-xl p-6 text-left">
                   <div className="flex items-start gap-3">
-                    <div className="p-2 bg-primary-foreground/20 rounded-lg">
-                      <ArrowRight className="h-5 w-5 text-primary-foreground" />
+                    <div className="p-2 bg-white/20 rounded-lg">
+                      <ArrowRight className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-primary-foreground mb-2">Optimized Slide Flow</h4>
-                      <p className="text-primary-foreground/80 text-sm">Reorder your slides for maximum investor impact and engagement</p>
+                      <h4 className="font-semibold text-white mb-2">Optimized Slide Flow</h4>
+                      <p className="text-white/80 text-sm">Reorder your slides for maximum investor impact and engagement</p>
                     </div>
                   </div>
                 </div>
                 
-                <div className="bg-primary-foreground/10 rounded-xl p-6 text-left">
+                <div className="bg-white/10 rounded-xl p-6 text-left">
                   <div className="flex items-start gap-3">
-                    <div className="p-2 bg-primary-foreground/20 rounded-lg">
-                      <Brain className="h-5 w-5 text-primary-foreground" />
+                    <div className="p-2 bg-white/20 rounded-lg">
+                      <Brain className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-primary-foreground mb-2">AI Content Suggestions</h4>
-                      <p className="text-primary-foreground/80 text-sm">Specific content recommendations to strengthen weak areas</p>
+                      <h4 className="font-semibold text-white mb-2">AI Content Suggestions</h4>
+                      <p className="text-white/80 text-sm">Specific content recommendations to strengthen weak areas</p>
                     </div>
                   </div>
                 </div>
@@ -374,8 +380,8 @@ export const AnalysisResults = ({ analysis }: AnalysisResultsProps) => {
             
             {/* Subscription Instructions */}
             <div className="text-center mb-4">
-              <h3 className="font-semibold text-primary-foreground mb-2">Subscribe below to unlock your complete analysis</h3>
-              <p className="text-primary-foreground/80 text-sm">Once you subscribe, the content will automatically unlock. No manual verification needed!</p>
+              <h3 className="font-semibold text-white mb-2">Subscribe below to unlock your complete analysis</h3>
+              <p className="text-white/80 text-sm">Once you subscribe, the content will automatically unlock. No manual verification needed!</p>
             </div>
             
             {/* Substack Embed */}
@@ -395,7 +401,7 @@ export const AnalysisResults = ({ analysis }: AnalysisResultsProps) => {
             <div className="text-center pt-4">
               <button
                 onClick={handleManualSubscription}
-                className="px-6 py-3 bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground border border-primary-foreground/40 rounded-lg transition-colors text-sm font-medium"
+                className="px-6 py-3 bg-white/20 hover:bg-white/30 text-white border border-white/40 rounded-lg transition-colors text-sm font-medium"
               >
                 I promise, I've subscribed, give me access! 🚀
               </button>

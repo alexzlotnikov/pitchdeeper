@@ -111,6 +111,8 @@ const Index = () => {
     setAnalysisComplete(false);
     setAnalysisResults(null);
     setIsAnalyzing(false);
+    // Reset subscription state for new analysis
+    localStorage.removeItem('substack_subscription');
   };
 
   return (
@@ -186,7 +188,7 @@ const Index = () => {
                 <Button 
                   onClick={handleAnalyze}
                   disabled={isAnalyzing}
-                  className="bg-gradient-primary hover:opacity-90 text-primary-foreground font-semibold px-8 py-3 text-lg shadow-elegant"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-8 py-3 text-lg shadow-lg"
                 >
                   {isAnalyzing ? (
                     <>
