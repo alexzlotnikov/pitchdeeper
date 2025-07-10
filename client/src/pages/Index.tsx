@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'wouter';
 import { FileUpload } from '@/components/FileUpload';
 import { AnalysisResults } from '@/components/AnalysisResults';
 import { Button } from '@/components/ui/button';
 import { Brain, Target, TrendingUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -38,20 +37,22 @@ const Index = () => {
 
       console.log('Starting analysis for file:', uploadedFile.name);
 
-      const response = await supabase.functions.invoke('analyze-pitch', {
+      const response = await fetch('/api/analyze-pitch', {
+        method: 'POST',
         body: formData,
       });
 
-      console.log('Supabase function response:', response);
+      console.log('API response status:', response.status);
 
-      if (response.error) {
-        console.error('Supabase function error:', response.error);
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('API error:', errorData);
         
         // Handle specific error types without page refresh
         let errorMessage = 'Analysis failed. Please try again.';
         
-        if (response.error.message) {
-          const message = response.error.message;
+        if (errorData.error) {
+          const message = errorData.error;
           if (message.includes('API_KEY_MISSING')) {
             errorMessage = 'AI service is not configured. Please contact support.';
           } else if (message.includes('FILE_TOO_LARGE')) {
@@ -76,20 +77,10 @@ const Index = () => {
         return; // Early return to prevent further execution
       }
 
-      if (!response.data) {
-        console.error('No analysis data received');
-        toast({
-          title: "Analysis failed",
-          description: "No analysis data received. Please try again.",
-          variant: "destructive",
-        });
-        
-        setIsAnalyzing(false);
-        return;
-      }
-
-      console.log('Analysis data received:', response.data);
-      setAnalysisResults(response.data);
+      const analysisData = await response.json();
+      console.log('Analysis data received:', analysisData);
+      
+      setAnalysisResults(analysisData);
       setAnalysisComplete(true);
       setIsAnalyzing(false);
       

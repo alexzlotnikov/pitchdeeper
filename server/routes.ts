@@ -1,101 +1,54 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import type { Express } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import multer from "multer";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const upload = multer({ storage: multer.memoryStorage() });
 
-interface AnalysisRequest {
-  fileName: string;
-  fileType: string;
-  fileSize: number;
-}
-
-const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  try {
-    const groqApiKey = Deno.env.get('GROQ_API_KEY');
-    if (!groqApiKey) {
-      console.error('Groq API key not configured');
-      return new Response(
-        JSON.stringify({ 
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Pitch analysis API route
+  app.post('/api/analyze-pitch', upload.single('file'), async (req, res) => {
+    try {
+      const groqApiKey = process.env.GROQ_API_KEY;
+      if (!groqApiKey) {
+        console.error('Groq API key not configured');
+        return res.status(500).json({
           error: 'AI service not configured. Please contact support.',
           code: 'API_KEY_MISSING'
-        }),
-        {
-          status: 500,
-          headers: { 
-            'Content-Type': 'application/json',
-            ...corsHeaders 
-          },
-        }
-      );
-    }
+        });
+      }
 
-    const formData = await req.formData();
-    const file = formData.get('file') as File;
-    
-    if (!file) {
-      console.error('No file uploaded');
-      return new Response(
-        JSON.stringify({ 
+      const file = req.file;
+      if (!file) {
+        console.error('No file uploaded');
+        return res.status(400).json({
           error: 'No file was uploaded. Please select a file and try again.',
           code: 'NO_FILE'
-        }),
-        {
-          status: 400,
-          headers: { 
-            'Content-Type': 'application/json',
-            ...corsHeaders 
-          },
-        }
-      );
-    }
+        });
+      }
 
-    console.log('Processing file:', file.name, 'Type:', file.type, 'Size:', file.size);
+      console.log('Processing file:', file.originalname, 'Type:', file.mimetype, 'Size:', file.size);
 
-    // Validate file type and size
-    const fileExtension = file.name.toLowerCase().split('.').pop();
-    const isValidPitchDeck = ['pdf', 'ppt', 'pptx'].includes(fileExtension || '');
-    const maxSizeBytes = 50 * 1024 * 1024; // 50MB
-    
-    if (!isValidPitchDeck) {
-      return new Response(
-        JSON.stringify({ 
+      // Validate file type and size
+      const fileExtension = file.originalname.toLowerCase().split('.').pop();
+      const isValidPitchDeck = ['pdf', 'ppt', 'pptx'].includes(fileExtension || '');
+      const maxSizeBytes = 50 * 1024 * 1024; // 50MB
+      
+      if (!isValidPitchDeck) {
+        return res.status(400).json({
           error: 'Please upload a PDF or PowerPoint file (.pdf, .ppt, .pptx)',
           code: 'INVALID_FILE_TYPE'
-        }),
-        {
-          status: 400,
-          headers: { 
-            'Content-Type': 'application/json',
-            ...corsHeaders 
-          },
-        }
-      );
-    }
+        });
+      }
 
-    if (file.size > maxSizeBytes) {
-      return new Response(
-        JSON.stringify({ 
+      if (file.size > maxSizeBytes) {
+        return res.status(400).json({
           error: 'File size too large. Please upload a file smaller than 50MB.',
           code: 'FILE_TOO_LARGE'
-        }),
-        {
-          status: 400,
-          headers: { 
-            'Content-Type': 'application/json',
-            ...corsHeaders 
-          },
-        }
-      );
-    }
+        });
+      }
 
-    const analysisPrompt = `
+      const analysisPrompt = `
 You are a seasoned venture capitalist with 20+ years of experience reviewing pitch decks. You are starting fresh with this deck analysis - no memory of previous decks.
 
 CRITICAL ANALYSIS RULES:
@@ -112,8 +65,8 @@ SLIDE NAMING REQUIREMENTS:
 - Match slide count to realistic expectations based on file size
 
 File Analysis:
-- Name: ${file.name}
-- Type: ${file.type} 
+- Name: ${file.originalname}
+- Type: ${file.mimetype} 
 - Size: ${Math.round(file.size / 1024 / 1024 * 100) / 100} MB
 
 SLIDE COUNT ESTIMATION LOGIC:
@@ -262,70 +215,58 @@ CRITICAL REQUIREMENTS:
 - Include compelling company description that explains what they do in one line
 `;
 
-    console.log('Sending request to Groq API...');
+      console.log('Sending request to Groq API...');
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${groqApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-        messages: [
-          {
-            role: 'user',
-            content: analysisPrompt
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 8192,
-      }),
-    });
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${groqApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'meta-llama/llama-3.1-70b-versatile',
+          messages: [
+            {
+              role: 'user',
+              content: analysisPrompt
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 8192,
+        }),
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Groq API error:', response.status, errorText);
-      throw new Error(`Groq API error: ${response.status}`);
-    }
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Groq API error:', response.status, errorText);
+        throw new Error(`Groq API error: ${response.status}`);
+      }
 
-    const data = await response.json();
-    console.log('Groq API response received');
+      const data = await response.json();
+      console.log('Groq API response received');
 
-    const analysisText = data.choices[0].message.content;
-    
-    // Extract JSON from the response
-    const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('No valid JSON found in Groq response');
-    }
+      const analysisText = data.choices[0].message.content;
+      
+      // Extract JSON from the response
+      const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('No valid JSON found in Groq response');
+      }
 
-    const analysis = JSON.parse(jsonMatch[0]);
-    console.log('Analysis completed successfully');
+      const analysis = JSON.parse(jsonMatch[0]);
+      console.log('Analysis completed successfully');
 
-    return new Response(JSON.stringify(analysis), {
-      headers: { 
-        'Content-Type': 'application/json',
-        ...corsHeaders 
-      },
-    });
+      res.json(analysis);
 
-  } catch (error) {
-    console.error('Error in analyze-pitch function:', error);
-    return new Response(
-      JSON.stringify({ 
+    } catch (error) {
+      console.error('Error in analyze-pitch function:', error);
+      res.status(500).json({
         error: error.message || 'Analysis failed',
         details: error.toString()
-      }),
-      {
-        status: 500,
-        headers: { 
-          'Content-Type': 'application/json',
-          ...corsHeaders 
-        },
-      }
-    );
-  }
-};
+      });
+    }
+  });
 
-serve(handler);
+  const httpServer = createServer(app);
+  return httpServer;
+}
